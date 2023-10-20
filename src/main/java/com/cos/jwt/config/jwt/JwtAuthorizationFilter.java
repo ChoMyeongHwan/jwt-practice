@@ -17,7 +17,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
-// 인가
+// BasicAuthenticationFilter : 권한이나 인증이 필요한 주소를 요청했을 때 해당 필터를 거침
+// 권한이나 인증이 필요한 주소가 아니라면 이 필터를 거치지 않음
 public class JwtAuthorizationFilter extends BasicAuthenticationFilter {
 
 	private UserRepository userRepository;
@@ -27,10 +28,13 @@ public class JwtAuthorizationFilter extends BasicAuthenticationFilter {
 		this.userRepository = userRepository;
 	}
 
+	// 인증이나 권한이 필요한 주소 요청이 있을 때 해당 필터를 타게 됨.
 	@Override
 	protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
 			throws IOException, ServletException {
 		String header = request.getHeader(JwtProperties.HEADER_STRING);
+		
+		// header가 있는지 확인
 		if (header == null || !header.startsWith(JwtProperties.TOKEN_PREFIX)) {
 			chain.doFilter(request, response);
 			return;
@@ -45,6 +49,7 @@ public class JwtAuthorizationFilter extends BasicAuthenticationFilter {
 		String username = JWT.require(Algorithm.HMAC512(JwtProperties.SECRET)).build().verify(token)
 				.getClaim("username").asString();
 
+		// 서명이 정상적으로 됨
 		if (username != null) {
 			Users user = userRepository.findByUsername(username);
 
